@@ -1,53 +1,48 @@
 ﻿using RestSharp;
 using System.Text.Json;
+using cs_challenge.Utils;
+using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
 namespace challenge {
-    public class Pokemon {
-        public string? name { get; set; }
-        public string? url { get; set; }
-    }
 
-    public class Pokedex {
-        public int count { get; set; }
+    public class PokeInfo {
         public List<Pokemon>? results { get; set; }
     }
 
-
     class Program {
         static int Main(string[] args) {
-            var pokes = do_get();
-            if (pokes == null) {
-                Console.WriteLine("deu ruim");
-                return -1;
+            Console.Write("N# of pokemons: ");
+            var n = int.Parse(Console.ReadLine()!);
+            List<Pokemon> pokedex = do_get(n);
+            Console.WriteLine("Pokemons Avaliable:");
+            Console.WriteLine("----------------------------------------------------------------");
+            foreach (var pokemon in pokedex) {
+                Console.WriteLine(pokemon);
+                Console.WriteLine("----------------------------------------------------------------");
             }
 
-            print_deserialized(pokes.Content);
 
             return 0;
         }
 
-        private static RestResponse do_get() {
+        private static List<Pokemon> do_get(int n) {
             var client = new RestClient($"https://pokeapi.co/api/v2");
-            RestRequest request = new RestRequest("/pokemon?limit=100000&offset=0/json/", Method.Get);
+            RestRequest request = new RestRequest($"/pokemon?limit={n}", Method.Get);
             RestResponse response = client.Execute(request);
-            return response;
-        }
+            PokeInfo? poke_info = JsonSerializer.Deserialize<PokeInfo>(response.Content??@"{""count"": ""0""}");
+            List<Pokemon> pokedex = new List<Pokemon>();
+            
+            for (int i = 1; i <= (poke_info?.results!).Count; i++) {
+                request = new RestRequest($"/pokemon/{i}/", Method.Get);
+                response = client.Execute(request);
+                Pokemon? pk = JsonSerializer.Deserialize<Pokemon>(response.Content!);
+                if (pk != null) {
+                    pokedex.Add(pk);
+                }
+            }
 
-        private static void print_deserialized(string? json_string) {
-            if (json_string == null) {
-                Console.WriteLine("json_string null");
-                return;
-            }
-            Pokedex? pokemon = JsonSerializer.Deserialize<Pokedex>(json_string);
-            if (pokemon == null || pokemon.results == null) {
-                Console.WriteLine("Nothing to print");
-                return;
-            }
-            foreach (var pk in pokemon.results) {
-                Console.WriteLine("------------------------------------------");
-                Console.WriteLine($"name: {pk.name}\nurl: {pk.url}");
-            }
-            Console.WriteLine("------------------------------------------");
+            return pokedex;
         }
     }
 }
