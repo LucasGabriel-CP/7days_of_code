@@ -15,7 +15,8 @@ public class Pokemon {
     public List<AbilitiesClass>? abilities { get; set; }
     /*public List<string>? types { get; set; }*/
     public override string ToString() {
-        if (name == null) return string.Empty;
+        if (name == null) { return string.Empty; }
+        if (height == null) { return name; }
         return $"Name: {name}\nHeight: {height}\nWeight: {weight}\nAbilities:\n{string.Join('\n', abilities!)}";
     }
 }
